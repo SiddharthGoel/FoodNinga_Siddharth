@@ -1,0 +1,51 @@
+<div class="container mt-5">
+    <h2>Restaurant Menu</h2>
+  
+    <div class="row">
+      <!-- Left Column: Menu Items (60%) -->
+      <div class="col-md-7">
+        <div *ngIf="menuItems.length > 0; else noMenu">
+          <div class="card mb-3" *ngFor="let item of menuItems" (click)="addToOrder(item)" style="cursor: pointer;">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description }}</p>
+              <p><strong>Price: </strong> {{ item.price }}</p>
+            </div>
+          </div>
+        </div>
+        <ng-template #noMenu>
+          <p>No menu available.</p>
+        </ng-template>
+      </div>
+  
+      <!-- Right Column: Order Details (40%) -->
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-header">
+          <h5>Order Details</h5>
+        </div>
+        <div class="card-body">
+          <div *ngFor="let order of orders; let i = index">
+            <p><strong>Item:</strong> {{ order.itemName }}</p>
+            <div class="d-flex align-items-center mb-2">
+              <button class="btn btn-sm btn-danger me-2" (click)="decreaseQuantity(i)">-</button>
+              <span>{{ order.quantity }}</span>
+              <button class="btn btn-sm btn-success ms-2" (click)="increaseQuantity(i)">+</button>
+            </div>
+            <p><strong>Price:</strong> {{ order.price | currency }}</p>
+            <hr>
+          </div>
+    
+          <div *ngIf="orders.length > 0">
+            <h5>Total: {{ getTotal() | currency }}</h5>
+            <button class="btn btn-primary w-100 mt-3" (click)="placeOrder()">Place Order</button>
+          </div>
+    
+          <div *ngIf="orders.length === 0">
+            <p>No items in the order.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  

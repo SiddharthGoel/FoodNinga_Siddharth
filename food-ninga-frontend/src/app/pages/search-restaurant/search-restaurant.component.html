@@ -1,0 +1,17 @@
+<div class="container mt-5">
+  <h2>Search Restaurants</h2>
+  <div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Enter Zip Code" [(ngModel)]="zipCode">
+    <button class="btn btn-primary" (click)="search()">Search</button>
+  </div>
+
+  <div *ngIf="restaurants.length > 0">
+    <h4>Restaurants Found:</h4>
+    <ul class="list-group">
+      <li class="list-group-item" *ngFor="let restaurant of restaurants" (click)="viewMenu(restaurant.id)">
+        {{ restaurant.name }} ({{ restaurant.zip_code }})
+      </li>
+    </ul>
+  </div>
+</div>
+  
