@@ -26,7 +26,7 @@ export class LoginComponent {
     this.apiService.loginUser(payload).subscribe({
       next: (response: any) => {
         console.log('Login successful:', response);
-        this.apiService.setUserId(response.user_id)
+        this.apiService.setUserId(response.user_id, response.name)
         // Navigate after successful login
         this.router.navigate(['/chooseRestaurant']);
       },

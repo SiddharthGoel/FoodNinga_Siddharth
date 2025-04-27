@@ -6,8 +6,10 @@ import { Injectable } from '@angular/core';
 })
 export class ApiService {
   private userId: string = '';
-  setUserId(user_id: string) {
+  private userName: string = '';
+  setUserId(user_id: string, name:string) {
     this.userId = user_id;
+    this.userName =name;
   }
 
   getUserId(): string {
@@ -22,12 +24,12 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   loginUser(credentials: any) {
-    // not implemented in backend yet, placeholder
+    this.logEvent("login").subscribe();
     return this.http.post(`${this.baseUrl}/login`, credentials);
   }
 
   signupUser(user: any) {
-    // not implemented in backend yet, placeholder
+    this.logEvent("signup").subscribe();
     return this.http.post(`${this.baseUrl}/signup`, user);
   }
 
@@ -41,5 +43,13 @@ export class ApiService {
 
   placeOrder(order: any) {
     return this.http.post(`${this.baseUrl}/orders`, order);
+  }
+  logEvent(eventType: string) {
+    const logData = {
+      event_type: eventType,
+      user_id: this.getUserId()
+    };
+    console.log(logData)
+    return this.http.post(`${this.baseUrl}/logs`, logData);
   }
 }

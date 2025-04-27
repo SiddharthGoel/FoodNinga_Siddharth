@@ -269,14 +269,13 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    res.json({ message: 'Login successful', user_id: user.user_id });
+    res.json({ message: 'Login successful', user_id: user.user_id, name: user.name });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get reviews for a restaurant
 app.post('/orders', async (req, res) => {
   // console.log(req.body);
   const { user_id, restaurant_id, orders, total_price, status, timestamps } = req.body;
