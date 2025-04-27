@@ -57,17 +57,47 @@ export class RestaurantMenuComponent implements OnInit {
     return match ? parseFloat(match[0]) : 0;
   }
 
+  // placeOrder() {
+  //   if (this.orders.length === 0) {
+  //     alert('No items to order.');
+  //     return;
+  //   }
+    
+  //   console.log('Placing order:', this.orders);
+  //   alert('Order placed successfully! 🎉');
+  
+  //   // Optionally clear the cart after placing order
+  //   this.orders = [];
+  // }
   placeOrder() {
     if (this.orders.length === 0) {
       alert('No items to order.');
       return;
     }
   
-    console.log('Placing order:', this.orders);
-    alert('Order placed successfully! 🎉');
+    const orderPayload = {
+      user_id: this.api.getUserId(), 
+      restaurant_id: this.restaurantId,
+      orders: this.orders,
+      total_price: this.getTotal(),
+      status: 'placed',
+      timestamps: new Date().toISOString()
+    };
   
-    // Optionally clear the cart after placing order
-    this.orders = [];
+    console.log('Placing order:', orderPayload);
+  
+    this.api.placeOrder(orderPayload).subscribe(
+      (response) => {
+        console.log('Order placed successfully!', response);
+        alert('Order placed successfully! 🎉');
+        this.orders = []; // clear the cart
+      },
+      (error) => {
+        console.error('Error placing order:', error);
+        alert('Failed to place order. Please try again.');
+      }
+    );
   }
+  
   
 }

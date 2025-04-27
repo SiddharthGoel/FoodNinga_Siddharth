@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import zipcodes from 'zipcodes';
 
 dotenv.config();
 
@@ -47,7 +48,60 @@ const MenuSchema = new mongoose.Schema({
     description: String,
     price: String
 });
-
+const restaurantSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+    unique: true
+  },
+  position: {
+    type: Number
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  score: {
+    type: Number,
+    default: null
+  },
+  ratings: {
+    type: Number,
+    default: 0
+  },
+  category: {
+    type: String
+  },
+  price_range: {
+    type: String
+  },
+  full_address: {
+    type: String
+  },
+  zip_code: {
+    type: Number
+  },
+  lat: {
+    type: Number,
+    required: true
+  },
+  lng: {
+    type: Number,
+    required: true
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true
+    }
+  }
+});
 const RatingReviewSchema = new mongoose.Schema({
     restaurant_id: Number,
     user_id: Number,
@@ -65,6 +119,7 @@ const LogSchema = new mongoose.Schema({
 const Menu = mongoose.model('Menu', MenuSchema);
 const RatingReview = mongoose.model('RatingReview', RatingReviewSchema);
 const Log = mongoose.model('Log', LogSchema);
+const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
 // Test Connection Route
 app.get('/ping', async (req, res) => {
@@ -103,20 +158,53 @@ app.get('/menus/:restaurantId', async (req, res) => {
       res.status(500).send(err.message);
   }
 });
+// app.get('/restaurants/:zipCode', async (req, res) => {
+//     try {
+//         const pool = await sql.connect(sqlConfig);
+//         const zipCode = `%${req.params.zipCode}%`;
+//         console.log(zipCode)
+//         const result = await pool.request()
+//             .input('zipCode', sql.VarChar, zipCode)
+//             .query('SELECT * FROM Restaurants WHERE zip_code LIKE @zipCode');
+//         res.json(result.recordset);
+//     } catch (err) {
+//         console.error('Error fetching restaurants:', err);
+//         res.status(500).send(err.message);
+//     }
+// });
 app.get('/restaurants/:zipCode', async (req, res) => {
-    try {
-        const pool = await sql.connect(sqlConfig);
-        const zipCode = `%${req.params.zipCode}%`;
-        console.log(zipCode)
-        const result = await pool.request()
-            .input('zipCode', sql.VarChar, zipCode)
-            .query('SELECT * FROM Restaurants WHERE zip_code LIKE @zipCode');
-        res.json(result.recordset);
-    } catch (err) {
-        console.error('Error fetching restaurants:', err);
-        res.status(500).send(err.message);
-    }
+  const zipCode = req.params.zipCode;  // Just use as-is
+  if (!zipCode) {
+    return res.status(400).json({ error: "Zipcode is required" });
+  }
+  const location = zipcodes.lookup(zipCode);
+
+  if (!location) {
+    return res.status(404).json({ error: "Invalid zipcode" });
+  }
+
+  const { latitude, longitude } = location;
+  console.log(zipCode, latitude, longitude);
+  try {
+    // Radius of Earth ≈ 3963.2 miles
+    const restaurantsNearby = await Restaurant.find({
+      location: {
+        $geoWithin: {
+          $centerSphere: [
+            [longitude, latitude],
+            10 / 3963.2 // 10 miles in radians
+          ]
+        }
+      }
+    }); // No .toArray() needed
+
+    res.json(restaurantsNearby);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
 // Signup endpoint
 app.post('/signup', async (req, res) => {
   const { name, email, password, phone } = req.body;
@@ -187,25 +275,59 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-  
-
-// Post a new order
-app.post('/orders', async (req, res) => {
-    const { user_id, restaurant_id, items, total_price, status } = req.body;
-    try {
-        const pool = await sql.connect(sqlConfig);
-        await pool.request().query(`
-            INSERT INTO Orders (user_id, restaurant_id, items, total_price, status, timestamps)
-            VALUES (${user_id}, ${restaurant_id}, '${items}', ${total_price}, '${status}', GETDATE())
-        `);
-        res.status(201).send('Order created successfully');
-    } catch (err) {
-        console.error('Error creating order:', err);
-        res.status(500).send(err.message);
-    }
-});
 
 // Get reviews for a restaurant
+app.post('/orders', async (req, res) => {
+  // console.log(req.body);
+  const { user_id, restaurant_id, orders, total_price, status, timestamps } = req.body;
+
+  if (!user_id || !restaurant_id || !orders || orders.length === 0) {
+    return res.status(400).json({ error: 'Missing required order fields.' });
+  }
+
+  const pool = await sql.connect(sqlConfig);
+
+  try {
+    // Step 1: Insert into Orders table and capture the generated order_id
+    const result = await pool.request()
+      .input('user_id', sql.Int, user_id)
+      .input('restaurant_id', sql.Int, restaurant_id)
+      .input('total_price', sql.Decimal(10, 2), total_price)
+      .input('status', sql.VarChar(50), status)
+      .input('timestamps', sql.DateTime, timestamps)
+      .query(`
+        INSERT INTO Orders (user_id, restaurant_id, total_price, status, timestamps)
+        OUTPUT INSERTED.order_id
+        VALUES (@user_id, @restaurant_id, @total_price, @status, @timestamps)
+      `);
+
+    const order_id = result.recordset[0].order_id; // Capture the order_id of the newly inserted order
+    console.log(order_id)
+    console.log(result.recordset[0])
+
+    // Step 2: Insert OrderDetails in a single transaction
+    const orderDetailsPromises = orders.map(async (order) => {
+      return pool.request()
+        .input('order_id', sql.Int, order_id)
+        .input('itemName', sql.VarChar(sql.MAX), order.itemName)
+        .input('quantity', sql.Int, order.quantity)
+        .input('price', sql.Decimal(10, 2), order.price)
+        .query(`
+          INSERT INTO OrderDetails (order_id, itemName, quantity, price)
+          VALUES (@order_id, @itemName, @quantity, @price)
+        `);
+    });
+
+    // Wait for all OrderDetails records to be inserted
+    await Promise.all(orderDetailsPromises);
+
+    res.status(201).send({'message':'Order created successfully!'});
+  } catch (err) {
+    console.error('Error creating order:', err);
+    res.status(500).send(err.message);
+  }
+});
+
 app.get('/reviews/:restaurantId', async (req, res) => {
     try {
         const restaurantId = parseInt(req.params.restaurantId, 10);  // 🔥 parse to integer

@@ -17,12 +17,28 @@ export class SearchRestaurantComponent {
 
   constructor(private api: ApiService, private router: Router,private route: ActivatedRoute) {}
 
-  search() {
-    this.api.searchRestaurants(this.zipCode).subscribe((res: any) => {
-      this.restaurants = res;
-      console.log(this.restaurants)
-    });
-  }
+// Initialize the message property
+message: string = '';
+
+search() {
+  this.restaurants = [];
+  this.message = ''; // Clear previous messages
+
+  this.api.searchRestaurants(this.zipCode).subscribe({
+    next: (res: any) => {
+      if (res && res.length > 0) {
+        this.restaurants = res;
+      } else {
+        this.message = 'No restaurants found for the provided zip code.';
+      }
+    },
+    error: (err) => {
+      console.error('API error:', err);
+      this.message = 'An error occurred while fetching restaurants. Please try again later.';
+    }
+  });
+}
+
 
   viewMenu(restaurantId: number) {
     console.log("restaurant ID: "+ restaurantId)

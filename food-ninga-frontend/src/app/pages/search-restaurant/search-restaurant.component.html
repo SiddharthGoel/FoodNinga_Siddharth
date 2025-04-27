@@ -4,14 +4,41 @@
     <input type="text" class="form-control" placeholder="Enter Zip Code" [(ngModel)]="zipCode">
     <button class="btn btn-primary" (click)="search()">Search</button>
   </div>
-
+  
+  <div *ngIf="message" class="alert alert-warning mt-3">
+    {{ message }}
+  </div>  
   <div *ngIf="restaurants.length > 0">
     <h4>Restaurants Found:</h4>
-    <ul class="list-group">
-      <li class="list-group-item" *ngFor="let restaurant of restaurants" (click)="viewMenu(restaurant.id)">
-        {{ restaurant.name }} ({{ restaurant.zip_code }})
-      </li>
-    </ul>
+    <div class="row">
+      <div class="col-md-6 mb-4" *ngFor="let restaurant of restaurants">
+        <div class="card h-100" (click)="viewMenu(restaurant.id)" style="cursor: pointer;">
+          <div class="card-body">
+            <h5 class="card-title">{{ restaurant.name }}</h5>
+
+            <p class="card-text mb-2">
+              <strong>Score:</strong>
+              <span>
+                <ng-container *ngFor="let star of [1,2,3,4,5]; let i = index">
+                  <i class="fa" [class.fa-star]="restaurant.score >= star" [class.fa-star-o]="restaurant.score < star"></i>
+                </ng-container>
+                ({{ restaurant.ratings }})
+              </span>
+            </p>
+
+            <p class="card-text mb-1">
+              <strong>Category:</strong> {{ restaurant.category }}
+            </p>
+            <p class="card-text mb-1">
+              <strong>Price Range:</strong> {{ restaurant.price_range || 'N/A' }}
+            </p>
+            <p class="card-text">
+              <strong>Address:</strong> {{ restaurant.full_address }}
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-  

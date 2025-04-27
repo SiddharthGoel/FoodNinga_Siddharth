@@ -5,6 +5,18 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class ApiService {
+  private userId: string = '';
+  setUserId(user_id: string) {
+    this.userId = user_id;
+  }
+
+  getUserId(): string {
+    return this.userId;
+  }
+
+  clearUserId() {
+    this.userId = '';
+  }
   private baseUrl = 'http://localhost:5000';  // your backend server
 
   constructor(private http: HttpClient) {}
