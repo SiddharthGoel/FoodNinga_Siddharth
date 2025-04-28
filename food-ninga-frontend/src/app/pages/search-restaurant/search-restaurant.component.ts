@@ -40,8 +40,9 @@ search() {
 }
 
 
-  viewMenu(restaurantId: number) {
+  viewMenu(restaurantId: number, restaurant:object) {
     console.log("restaurant ID: "+ restaurantId)
+    this.api.setRestaurant(restaurant)
     this.router.navigate(['/restaurant', restaurantId, 'menu']);
   }
 }

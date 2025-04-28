@@ -7,6 +7,8 @@ import { Injectable } from '@angular/core';
 export class ApiService {
   private userId: string = '';
   private userName: string = '';
+  private restaurant: object = {};
+
   setUserId(user_id: string, name:string) {
     this.userId = user_id;
     this.userName =name;
@@ -14,6 +16,15 @@ export class ApiService {
 
   getUserId(): string {
     return this.userId;
+  }
+  getUserName(): string {
+    return this.userName;
+  }
+  setRestaurant(restaurant:object){
+    this.restaurant =restaurant;
+  }
+  getRestaurant():object {
+    return this.restaurant;
   }
 
   clearUserId() {

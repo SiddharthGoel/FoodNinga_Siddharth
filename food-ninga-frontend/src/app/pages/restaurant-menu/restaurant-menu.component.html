@@ -1,5 +1,6 @@
 <div class="container mt-5">
-    <h2>Restaurant Menu</h2>
+  <h2 *ngIf="restaurant?.name">{{ restaurant.name }}</h2>
+  <h4>Restaurant Menu</h4>
   
     <div class="row">
       <!-- Left Column: Menu Items (60%) -->

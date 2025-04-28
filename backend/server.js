@@ -102,11 +102,32 @@ const restaurantSchema = new mongoose.Schema({
     }
   }
 });
-const RatingReviewSchema = new mongoose.Schema({
-    restaurant_id: Number,
-    user_id: Number,
-    rating: Number,
-    review: String
+// Define the RatingReview Schema
+const ratingReviewSchema = new mongoose.Schema({
+  restaurant_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant', // Assuming a Restaurant model exists
+    required: true
+  },
+  user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // Assuming a User model exists
+    required: true
+  },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    required: true
+  },
+  review: {
+    type: String,
+    required: true
+  },
+  created_at: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 const LogSchema = new mongoose.Schema({
@@ -117,7 +138,7 @@ const LogSchema = new mongoose.Schema({
 });
 
 const Menu = mongoose.model('Menu', MenuSchema);
-const RatingReview = mongoose.model('RatingReview', RatingReviewSchema);
+const RatingReview = mongoose.model('RatingReview', ratingReviewSchema);
 const Log = mongoose.model('Log', LogSchema);
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
@@ -336,6 +357,40 @@ app.get('/reviews/:restaurantId', async (req, res) => {
         console.error('Error fetching reviews:', err);
         res.status(500).send(err.message);
     }
+});
+
+// POST route to add a rating and review
+app.post('/ratingreviews', async (req, res) => {
+  const { restaurant_id, user_id, rating, review } = req.body;
+
+  // Validate input
+  if (!restaurant_id || !user_id || !rating || !review) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+  }
+
+  try {
+    // Create a new rating and review document
+    const newRatingReview = new RatingReview({
+      restaurant_id,
+      user_id,
+      rating,
+      review
+    });
+
+    // Save to the database
+    await newRatingReview.save();
+
+    return res.status(201).json({
+      message: 'Rating and review successfully added',
+      data: newRatingReview
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error saving the review', error: error.message });
+  }
 });
 
 // Log an event

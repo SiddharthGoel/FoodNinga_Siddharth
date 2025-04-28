@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { ApiService } from '../app/services/api.service';
 
 @Component({
   selector: 'app-root',
@@ -9,4 +10,9 @@ import { RouterModule } from '@angular/router';
 })
 export class AppComponent {
   title = 'food-ninga-frontend';
+  userName = ''
+
+  constructor(private api: ApiService){
+    this.userName = this.api.getUserName()
+  }
 }

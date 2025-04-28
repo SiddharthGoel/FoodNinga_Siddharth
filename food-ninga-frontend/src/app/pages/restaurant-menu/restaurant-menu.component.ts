@@ -13,6 +13,7 @@ export class RestaurantMenuComponent implements OnInit {
   restaurantId!: number;
   menuItems: any[] = [];
   orders: any[] = [];
+  restaurant:any = {}
 
   constructor(private route: ActivatedRoute, private api: ApiService) {}
 
@@ -22,6 +23,7 @@ export class RestaurantMenuComponent implements OnInit {
     this.api.getRestaurantMenu(this.restaurantId).subscribe((res: any) => {
       this.menuItems = res;
     });
+    this.restaurant = this.api.getRestaurant()
   }
 
   increaseQuantity(index: number) {
